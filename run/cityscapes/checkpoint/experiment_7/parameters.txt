@@ -1,0 +1,4 @@
+datset:cityscapes
+epoch:200
+base_size:608
+crop_size:608

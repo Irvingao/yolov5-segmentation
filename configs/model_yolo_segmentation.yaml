@@ -1,0 +1,8 @@
+backbone:
+  type: YOLOv5_seg
+  version: s # s, m, l ,x
+  focus: True
+  with_C3TR: False
+head: 
+  seg: True
+
