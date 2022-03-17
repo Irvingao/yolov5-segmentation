@@ -4,8 +4,8 @@
 dataset: 
   cityscapes: 
     dataset_dir: /home/pc/workspace/dataset/cityscapes # foler that contains leftImg8bit/
-    num_class: 19
-    with_baockground: True # num_class = num_class + 1 if with_baockground == True
+    group: True
+    with_baockground: True # num_class = num_class + 1 if with_baockground == True , but it is only useful when group = False
   coco: 
     dataset_dir: /home/pc/workspace/dataset/coco2017 # folder that contains images/.
     num_class: 21

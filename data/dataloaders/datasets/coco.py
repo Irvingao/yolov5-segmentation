@@ -8,7 +8,6 @@ from pycocotools import mask
 from torchvision import transforms
 from PIL import Image, ImageFile
 
-from data.dataset_path import Path
 from data.dataloaders import custom_transforms as tr
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -21,7 +20,7 @@ class COCOSegmentation(Dataset):
 
     def __init__(self,
                  args,
-                 base_dir=Path.db_root_dir('coco'),
+                 base_dir,
                  split='train',
                  year='2017'):
         super().__init__()

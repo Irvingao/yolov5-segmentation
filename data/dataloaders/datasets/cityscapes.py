@@ -1,25 +1,22 @@
-# import sys
-# sys.path.insert(0,r'/home/pc/workspace/torch_ws/innox_ws/2D_seg_ws/yolov5_seg/flexible-yolov5') #将当前目录加入到本机的环境变量中
+import sys
+sys.path.insert(0,r'/home/pc/workspace/torch_ws/innox_ws/2D_seg_ws/yolov5-segmentation') #将当前目录加入到本机的环境变量中
 import os
 import numpy as np
 import scipy.misc as m
 from PIL import Image
 from torch.utils import data
 from torchvision import transforms
-from data.dataset_path import Path
 from data.dataloaders import custom_transforms as tr
 
 class CityscapesSegmentation(data.Dataset):
-    NUM_CLASSES = 19
-    # with background, 类别加入背景类(其他的所有类别)
-    NUM_CLASSES += 1
+    
 
-
-    def __init__(self, args, root=Path.db_root_dir('cityscapes'), split="train"):
+    def __init__(self, args, root, split="train", group=False, with_background=False):
 
         self.root = root
         self.split = split
         self.args = args
+        self.group = group
         self.files = {}
 
         self.images_base = os.path.join(self.root, 'leftImg8bit', self.split)
@@ -27,25 +24,76 @@ class CityscapesSegmentation(data.Dataset):
 
         self.files[split] = self.recursive_glob(rootdir=self.images_base, suffix='.png')
         '''
-        这里需要指定类别信息,void_classes为背景类,即白色剔除的类别
+        reference: https://www.cityscapes-dataset.com/dataset-overview/
+        
+        # Group	        |       Classes
+        # ----------------------------------------------------------------------------------------------
+        # flat 	        |   road · sidewalk · parking+ · rail track+
+        # human         |	person* · rider*
+        # vehicle       |	car* · truck* · bus* · on rails* · motorcycle* · bicycle* · caravan*+ · trailer*+
+        # construction	|   building · wall · fence · guard rail+ · bridge+ · tunnel+
+        # object        |   pole · pole group+ · traffic sign · traffic light
+        # nature        |   vegetation · terrain
+        # sky           |   sky
+        # void          |   ground+ · dynamic+ · static+
         '''
         self.ignore_index = 255 # 所有忽略类别的pixel value
+        if group: # 分为8大类
+            
+            void = [0, 2, 3, 4, 5, 6]
+            flat = [7, 8, 9, 10] # 我这里因为任务需要，将flat拆开
+            construction = [11, 12, 13, 14, 15, 16]
+            obj = [17, 18, 19 ,20]
+            nature = [21, 22]
+            sky = [23]
+            human = [24, 25]
+            vehicle = [26, 27, 28, 29, 30, 31, 32, 33]
+            self.void_classes = void
+            self.valid_classes = flat + construction + obj + nature + sky + human + vehicle
+            self.valid_class_groups = [flat, construction, obj, nature, sky, human, vehicle]
+            
+            self.NUM_CLASSES = len(self.valid_class_groups)
+            self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
 
-        self.void_classes = [0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 16, 18, 29, 30, -1]
-        self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]
-        self.class_names = ['road', 'sidewalk', 'building', 'wall', 'fence', \
-                            'pole', 'traffic_light', 'traffic_sign', 'vegetation', 'terrain', \
-                            'sky', 'person', 'rider', 'car', 'truck', 'bus', 'train', \
-                            'motorcycle', 'bicycle']
-        # 增加背景类
-        self.valid_classes.append(self.ignore_index)
-        self.class_names.append('background')
-        # print(self.valid_classes)
-        # print(self.class_names)
+            # 自定义部分
+            road = [1, 7]
+            sidewalk = [8]
+            parking = [9]
+            void.append(10) # 将rail track 放入void中
 
-        self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
+            self.void_classes = void
+            self.valid_classes = road + sidewalk + parking + construction + obj + nature + sky + human + vehicle
+            self.valid_class_groups = [road, sidewalk, parking, construction, obj, nature, sky, human, vehicle]
 
-        # print(self.class_map)
+            self.NUM_CLASSES = len(self.valid_class_groups)
+            self.class_map = {}
+            for n, group in enumerate(self.valid_class_groups):
+                for per_class in group:
+                    self.class_map[per_class] = n
+            # print(self.class_map)
+
+        else: # 分为19小类
+            # 这里需要指定类别信息,void_classes为背景类,即白色剔除的类别
+            self.void_classes = [0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 16, 18, 29, 30, -1]
+            self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]
+            self.class_names = ['road', 'sidewalk', 'building', 'wall', 'fence', \
+                                'pole', 'traffic_light', 'traffic_sign', 'vegetation', 'terrain', \
+                                'sky', 'person', 'rider', 'car', 'truck', 'bus', 'train', \
+                                'motorcycle', 'bicycle']
+            if with_background:
+                # 增加背景类
+                self.valid_classes.append(self.ignore_index)
+                self.class_names.append('background')
+                # print(self.valid_classes)
+                # print(self.class_names)
+
+
+            # with background, 类别加入背景类(其他的所有类别)
+            self.NUM_CLASSES = len(self.valid_classes) if not with_background else len(self.valid_classes)+1
+
+            self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
+
+        # print("total classes:", self.NUM_CLASSES)
 
         if not self.files[split]:
             raise Exception("No files for split=[%s] found in %s" % (split, self.images_base))
@@ -78,10 +126,16 @@ class CityscapesSegmentation(data.Dataset):
 
     def encode_segmap(self, mask):
         # Put all void classes to zero
-        for _voidc in self.void_classes: # 将label的无关类都作为白色
-            mask[mask == _voidc] = self.ignore_index
-        for _validc in self.valid_classes: # 所有标注的类别都上色, 背景类上白色
-                mask[mask == _validc] = self.class_map[_validc]
+        if self.group:
+            for _voidc in self.void_classes: # 将label的无关类都作为白色
+                mask[mask == _voidc] = self.ignore_index
+            for _validc in self.valid_classes: # 所有标注的类别都上色, 背景类上白色
+                    mask[mask == _validc] = self.class_map[_validc]
+        else:
+            for _voidc in self.void_classes: # 将label的无关类都作为白色
+                mask[mask == _voidc] = self.ignore_index
+            for _validc in self.valid_classes: # 所有标注的类别都上色, 背景类上白色
+                    mask[mask == _validc] = self.class_map[_validc]
         return mask
 
     def recursive_glob(self, rootdir='.', suffix=''):
@@ -124,7 +178,7 @@ class CityscapesSegmentation(data.Dataset):
         return composed_transforms(sample)
 
 if __name__ == '__main__':
-    from od.data.dataloaders.utils import decode_segmap
+    from data.dataloaders.utils import decode_segmap
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
     import argparse
@@ -134,7 +188,7 @@ if __name__ == '__main__':
     args.base_size = 513
     args.crop_size = 513
 
-    cityscapes_train = CityscapesSegmentation(args, split='train')
+    cityscapes_train = CityscapesSegmentation(args, split='train', root='/home/pc/workspace/dataset/cityscapes', group=True)
 
     dataloader = DataLoader(cityscapes_train, batch_size=2, shuffle=True, num_workers=2)
 

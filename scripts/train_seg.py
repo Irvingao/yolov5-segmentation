@@ -1,5 +1,4 @@
 import argparse
-import logging
 import os
 import random
 import time
@@ -19,9 +18,6 @@ from tensorboardX import SummaryWriter
 from tqdm import tqdm
 import sys
 sys.path.append('.')
-
-
-logger = logging.getLogger(__name__)
 
 
 def train(opt):
@@ -144,8 +140,6 @@ def train(opt):
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * opt.batch_size + image.data.shape[0]))
         
         train_loss = train_loss / len(tbar)
-        # print('per batch loss in an epoch: %.3f' % train_loss)
-        # print('best_pred: %.5f' % best_pred)
 
         # save checkpoint every epoch
         if opt.no_val:
@@ -196,9 +190,8 @@ def train(opt):
             print("Acc:{}, Acc_class:{}, mIoU:{}, fwIoU: {}".format(Acc, Acc_class, mIoU, FWIoU))
             
             test_loss = test_loss / len(tbar)
-            # print('Loss: %.5f' % test_loss)
-            # print('best_pred: %.5f' % best_pred)
 
+            # only save the best model
             new_pred = mIoU
             if new_pred >= best_pred:
                 is_best = True
@@ -220,6 +213,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--cfg', type=str, default='configs/model_yolo_segmentation.yaml', help='model.yaml path')
+    parser.add_argument('--dataset-cfg', type=str, default='configs/data.yaml', help='data.yaml path')
     parser.add_argument('--dataset', type=str, default='coco',choices=['pascal', 'coco', 'cityscapes'],help='dataset name (default: coco)')
     parser.add_argument('--base-size', type=int, default=608, help='segmentation base image size')
     parser.add_argument('--crop-size', type=int, default=608, help='segmentation crop image size')
@@ -228,7 +222,7 @@ if __name__ == '__main__':
     # finetuning pre-trained models
     parser.add_argument('--weights', type=str, default=None, help='initial weights path')
     parser.add_argument('--ft', action='store_true', default=False, help='finetuning on a different dataset')
-    parser.add_argument('--resume', nargs=str, default='', help='resume most recent training')
+    parser.add_argument('--resume', type=str, default='', help='resume most recent training')
     # evaluation option
     parser.add_argument('--eval-interval', type=int, default=1, help='evaluuation interval (default: 1)')
     parser.add_argument('--no-val', action='store_true', default=False, help='skip validation during training')
@@ -238,6 +232,6 @@ if __name__ == '__main__':
 
 
     # train
-    logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.save_dir}", view at http://localhost:6006/')
+    print('Start Tensorboard with "tensorboard --logdir {}", view at http://localhost:6006/'.format(opt.save_dir))
     
     train(opt)

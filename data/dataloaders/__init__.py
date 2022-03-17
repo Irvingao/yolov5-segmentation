@@ -1,4 +1,4 @@
-from data.dataloaders.datasets import cityscapes, coco, combine_dbs, pascal, sbd
+from data.dataloaders.datasets import cityscapes, coco, pascal
 from torch.utils.data import DataLoader
 
 def make_data_loader(args, **kwargs):
