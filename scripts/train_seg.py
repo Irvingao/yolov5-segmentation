@@ -21,6 +21,8 @@ sys.path.append('.')
 
 
 def train(opt):
+    torch.cuda.empty_cache()
+    
     save_dir, epochs, batch_size, weights = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights
 
@@ -119,6 +121,7 @@ def train(opt):
             optimizer.zero_grad()
             # forward
             output = model(image)
+
             # loss
             loss = criterion(output, target)
             # backward
@@ -132,7 +135,7 @@ def train(opt):
 
             # Show 10 * 3 inference results each epoch
             if i % (num_img_tr // 10) == 0:
-                print("[visualize image]")
+                # print("[visualize image]")
                 global_step = i + num_img_tr * epoch
                 summary.visualize_image(writer, opt.dataset, image, target, output, global_step)
 
@@ -150,7 +153,7 @@ def train(opt):
                 'optimizer': optimizer.state_dict(),
                 'best_pred': best_pred,
             }, is_best)
-        
+            
         # eval
         if not opt.no_val:
             tbar = tqdm(val_loader, desc='\r')
@@ -163,6 +166,8 @@ def train(opt):
                 # 不更新梯度
                 with torch.no_grad():
                     output = model(image)
+                # print("test input:", image.shape)
+                # print("test output:", output.shape)
 
                 loss = criterion(output, target)
 
@@ -210,7 +215,7 @@ def train(opt):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--seg', action='store_true', default=True, help='enable segmentation')
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--cfg', type=str, default='configs/model_yolo_segmentation.yaml', help='model.yaml path')
     parser.add_argument('--dataset-cfg', type=str, default='configs/data.yaml', help='data.yaml path')
@@ -226,7 +231,6 @@ if __name__ == '__main__':
     # evaluation option
     parser.add_argument('--eval-interval', type=int, default=1, help='evaluuation interval (default: 1)')
     parser.add_argument('--no-val', action='store_true', default=False, help='skip validation during training')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[608, 608], help='[train, test] image sizes')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     opt = parser.parse_args()
 

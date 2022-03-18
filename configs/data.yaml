@@ -3,9 +3,9 @@
 # dataset root dir
 dataset: 
   cityscapes: 
-    dataset_dir: /home/pc/workspace/dataset/cityscapes # foler that contains leftImg8bit/
+    dataset_dir: /root/ghz_ws/cityscapes # foler that contains leftImg8bit/
+    # dataset_dir: /home/pc/workspace/dataset/cityscapes # foler that contains leftImg8bit/
     group: True
-    with_baockground: True # num_class = num_class + 1 if with_baockground == True , but it is only useful when group = False
+    with_baockground: False # num_class = num_class + 1 if with_baockground == True , but it is only useful when group = False
   coco: 
-    dataset_dir: /home/pc/workspace/dataset/coco2017 # folder that contains images/.
-    num_class: 21
+    dataset_dir: /root/ghz_ws/coco # folder that contains images/.

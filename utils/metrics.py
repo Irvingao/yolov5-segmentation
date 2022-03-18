@@ -228,6 +228,7 @@ def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence'
 class Evaluator(object):
     def __init__(self, num_class):
         self.num_class = num_class
+        print("evaluator:", num_class)
         self.confusion_matrix = np.zeros((self.num_class,)*2)
 
     def Pixel_Accuracy(self):

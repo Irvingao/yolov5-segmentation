@@ -11,12 +11,12 @@ from data.dataloaders import custom_transforms as tr
 class CityscapesSegmentation(data.Dataset):
     
 
-    def __init__(self, args, root, split="train", group=False, with_background=False):
+    def __init__(self, args, root, split="train", group=True, with_background=False):
 
         self.root = root
         self.split = split
         self.args = args
-        self.group = group
+        self.group = group # 8 classes if group = True
         self.files = {}
 
         self.images_base = os.path.join(self.root, 'leftImg8bit', self.split)
@@ -47,7 +47,7 @@ class CityscapesSegmentation(data.Dataset):
             nature = [21, 22]
             sky = [23]
             human = [24, 25]
-            vehicle = [26, 27, 28, 29, 30, 31, 32, 33]
+            vehicle = [26, 27, 28, 29, 30, 31, 32, 33, -1]
             self.void_classes = void
             self.valid_classes = flat + construction + obj + nature + sky + human + vehicle
             self.valid_class_groups = [flat, construction, obj, nature, sky, human, vehicle]
@@ -55,7 +55,7 @@ class CityscapesSegmentation(data.Dataset):
             self.NUM_CLASSES = len(self.valid_class_groups)
             self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
 
-            # 自定义部分
+            # 自定义部分,分为9类
             road = [1, 7]
             sidewalk = [8]
             parking = [9]
@@ -70,7 +70,9 @@ class CityscapesSegmentation(data.Dataset):
             for n, group in enumerate(self.valid_class_groups):
                 for per_class in group:
                     self.class_map[per_class] = n
-            # print(self.class_map)
+            print(self.valid_classes)
+            print(self.void_classes)
+            print(self.class_map)
 
         else: # 分为19小类
             # 这里需要指定类别信息,void_classes为背景类,即白色剔除的类别
@@ -93,6 +95,7 @@ class CityscapesSegmentation(data.Dataset):
 
             self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
 
+            print(self.class_map)
         # print("total classes:", self.NUM_CLASSES)
 
         if not self.files[split]:
@@ -188,12 +191,21 @@ if __name__ == '__main__':
     args.base_size = 513
     args.crop_size = 513
 
-    cityscapes_train = CityscapesSegmentation(args, split='train', root='/home/pc/workspace/dataset/cityscapes', group=True)
+    cityscapes_train = CityscapesSegmentation(args, split='train', root='/home/pc/workspace/dataset/cityscapes', group=False)
 
     dataloader = DataLoader(cityscapes_train, batch_size=2, shuffle=True, num_workers=2)
 
     for ii, sample in enumerate(dataloader):
+        # print("sample:", sample)
+        # print("sample:", sample.shape)
+        
+        print("image1:", sample["image"])
+        print("image2:", sample["image"].shape)
+        print("image3:", sample["image"].size())
+        print("image4:", sample["image"].size()[0])
+        input()
         for jj in range(sample["image"].size()[0]):
+            
             img = sample['image'].numpy()
             gt = sample['label'].numpy()
             tmp = np.array(gt[jj]).astype(np.uint8)
