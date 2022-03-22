@@ -1,6 +1,5 @@
-import sys
-sys.path.insert(0,r'/home/pc/workspace/torch_ws/innox_ws/2D_seg_ws/yolov5-segmentation') #将当前目录加入到本机的环境变量中
 import os
+import sys
 import numpy as np
 import scipy.misc as m
 from PIL import Image
@@ -185,6 +184,7 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
     import argparse
+    sys.path.append(os.path.abspath('.')) # add the workspace path to system
 
     parser = argparse.ArgumentParser()
     args = parser.parse_args()

@@ -47,7 +47,8 @@ def decode_segmap(mask):
     return rgb
 
 def post_process(img, output):
-    mask =  torch.max(output[:3], 1)[1].detach().cpu().numpy() # 合并分类结果
+    # mask =  torch.max(output[:3], 1)[1].detach().cpu().numpy() # 合并分类结果
+    mask =  torch.max(output[:3], 1)[1].detach().numpy() # 合并分类结果
     mask = np.squeeze(mask) # 去掉第一维
     mask = decode_segmap(mask) # 将mask合成为fgb图
     img = img/255 # 
@@ -57,9 +58,11 @@ def post_process(img, output):
 def visualize2image(img, mask):
     plt.figure()
     plt.title('display')
-    plt.subplot(121)
+    plt.subplot(1,2,1)
+    plt.title('img with predict mask')
     plt.imshow(img)
-    plt.subplot(222)
+    plt.subplot(1,2,2)
+    plt.title('predict mask')
     plt.imshow(mask)
     plt.show()
 
@@ -93,13 +96,13 @@ def run(opt):
     if opt.dataset_dir != None:
         img_list, mask_gt_list = get_dataset_image(opt)
         for i, input_tensor in enumerate(img_list):
-            # input_tensor = proprecess(img)
-            print("input_tensor:", input_tensor.shape)
-            # img = img_precess(input_tensor.numpy())
             img = np.squeeze(input_tensor.numpy())
+            
             img = img_precess(img)
             print("img:", img.shape)
-            output = predict(opt, model, input_tensor) 
+            print("input_tensor:", input_tensor.shape)
+            
+            output = predict(opt, model, input_tensor).detach().cpu() # infer and move data to cpu
             img, mask = post_process(img, output)
             img_gt, mask_gt = gt_process(img, mask_gt_list[i])
             visualize4image(img, mask, img_gt, mask_gt)
@@ -109,11 +112,11 @@ def run(opt):
             img = cv2.imread(os.path.join(opt.img_dir, img))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (opt.crop_size, opt.crop_size))
-            print("img:", img.shape)
             input_tensor = proprecess(img)
+            print("img:", img.shape)
             print("input_tensor:", input_tensor.shape)
 
-            output = predict(opt, model, input_tensor) 
+            output = predict(opt, model, input_tensor).detach().cpu()
             img, mask = post_process(img, output)
             visualize2image(img, mask)
 
@@ -145,9 +148,6 @@ def get_dataset_image(opt):
     
     img_list = []
     mask_gt_list = []
-    # for i in range(10):
-        # img_list.append(dataloader[i]['image'].numpy())
-        # mask_gt_list.append(dataloader[i]['label'].numpy())
     for ii, sample in enumerate(dataloader):
         img_list.append(sample['image'])
         mask_gt_list.append(sample['label'].numpy())
