@@ -1,5 +1,7 @@
-import argparse
 import os
+import sys
+sys.path.append(os.path.abspath('.')) # add the workspace path to system
+import argparse
 import random
 import time
 from pathlib import Path
@@ -16,8 +18,6 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-import sys
-sys.path.append('.')
 
 
 def train(opt):

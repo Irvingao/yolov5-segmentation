@@ -132,4 +132,4 @@ dmypy.json
 /run
 /log_dir
 /pretrained_models
-/images
+# /images

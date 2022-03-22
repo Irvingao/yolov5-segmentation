@@ -1,8 +1,7 @@
 
-import sys
-sys.path.append("/home/pc/workspace/torch_ws/innox_ws/2D_seg_ws/yolov5-segmentation")
-
 import os
+import sys
+sys.path.append(os.path.abspath('.')) # add the workspace path to system
 import torch
 import argparse
 import cv2
